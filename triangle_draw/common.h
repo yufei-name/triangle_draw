@@ -46,6 +46,9 @@ struct GraphicsContext
 	VkBuffer vertex_buffer;
 	VkDeviceMemory vertex_mem;
 	
+	VkBuffer index_buffer;
+	VkDeviceMemory index_mem;
+
 	VkBuffer uniform_buffer_vs;
 	VkDeviceMemory uniform_memory_vs;
 

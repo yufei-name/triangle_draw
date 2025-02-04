@@ -12,9 +12,11 @@
 struct Vertex  vertices[] = {
 		{{1.0f, -1.0f}, {1.0f, 0.0f, 0.0f}},        // Vertex 1: Red
 		{{1.0f, 1.0f}, {0.0f, 1.0f, 0.0f}},         // Vertex 2: Green
-		{{-1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}}         // Vertex 3: Blue
+		{{-1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},         // Vertex 3: Blue
+		{{-1.0f, -1.0f}, {1.0f, 1.0f, 1.0f}},       // vertex 4: white
 };
 
+uint32_t indices[] = {0, 1, 2, 1, 0, 3};
 struct
 {
 	glm::mat4 projection;
@@ -873,10 +875,10 @@ static void build_command_buffers(struct GraphicsContext* graphics_context)
 		vkCmdBindPipeline(graphics_context->command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_context->graphics_pipeline);
 
 		vkCmdBindVertexBuffers(graphics_context->command_buffers[i], 0, 1, &graphics_context->vertex_buffer, offsets);
-		//vkCmdBindIndexBuffer(graphics_context->command_buffers[i], index_buffer->get_handle(), 0, VK_INDEX_TYPE_UINT32);
+		vkCmdBindIndexBuffer(graphics_context->command_buffers[i], graphics_context->index_buffer, 0, VK_INDEX_TYPE_UINT32);
 
-		//vkCmdDrawIndexed(draw_cmd_buffers[i], index_count, 1, 0, 0, 0);
-		vkCmdDraw(graphics_context->command_buffers[i], 3, 1, 0, 0);
+		vkCmdDrawIndexed(graphics_context->command_buffers[i], sizeof(indices) / sizeof(indices[0]), 1, 0, 0, 0);
+		//vkCmdDraw(graphics_context->command_buffers[i], 3, 1, 0, 0);
 		//draw_ui(draw_cmd_buffers[i]);
 
 		vkCmdEndRenderPass(graphics_context->command_buffers[i]);
@@ -888,6 +890,8 @@ static void build_command_buffers(struct GraphicsContext* graphics_context)
 bool resize(struct GraphicsContext* graphics_context,const uint32_t width, const uint32_t height)
 {
 	VkResult result;
+	VkSurfaceCapabilitiesKHR surface_properties;
+
 	VkSwapchainCreateInfoKHR create_info{ VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR };
 	VkSurfaceCapabilitiesKHR surface_capabilities{};
 	VkExtent2D surface_extent;
@@ -908,6 +912,14 @@ bool resize(struct GraphicsContext* graphics_context,const uint32_t width, const
 	VkDeviceMemory depth_stencil_mem = VK_NULL_HANDLE;
 
 	VkImageView attachments[2];
+
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(graphics_context->gpuDevice, graphics_context->display_surface, &surface_properties);
+
+	if (surface_properties.currentExtent.width == 0 || 
+		surface_properties.currentExtent.height == 0)
+	{
+		return false;
+	}
 
 	// Don't recreate the swapchain if the dimensions haven't changed
 	if (width == graphics_context->surface_extent.width && height == graphics_context->surface_extent.height)
@@ -1144,11 +1156,20 @@ static int application_handler(struct GraphicsContext* graphics_context, struct 
 
 static int setup_vertex_buffer(struct GraphicsContext* graphics_context)
 {
-	graphics_context->vertex_buffer = create_vertex_buffer(graphics_context->device, sizeof(vertices));
+	graphics_context->vertex_buffer = create_buffer(graphics_context->device, sizeof(vertices), 
+		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 	graphics_context->vertex_mem = alloc_bind_bufer_memory(graphics_context, graphics_context->vertex_buffer,
 		sizeof(vertices), VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
 	update_data_to_memory(graphics_context, graphics_context->vertex_mem, 0, vertices, sizeof(vertices));
+
+	graphics_context->index_buffer = create_buffer(graphics_context->device, sizeof(indices),
+		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+
+	graphics_context->index_mem = alloc_bind_bufer_memory(graphics_context, graphics_context->index_buffer,
+		sizeof(indices), VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+	update_data_to_memory(graphics_context, graphics_context->index_mem, 0, indices, sizeof(indices));
 
 	return 0;
 }
@@ -1161,7 +1182,7 @@ static int setup_uniform_buffer(struct GraphicsContext* graphics_context)
 	glm::vec3 camera_pos = glm::vec3();
 	glm::vec3 rotation = glm::vec3(0.0, 0.0, 180.0);
 
-	graphics_context->uniform_buffer_vs = create_uniform_buffer(graphics_context->device, sizeof(ubo_vs));
+	graphics_context->uniform_buffer_vs = create_buffer(graphics_context->device, sizeof(ubo_vs), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 	graphics_context->uniform_memory_vs = alloc_bind_bufer_memory(graphics_context, graphics_context->uniform_buffer_vs,
 		sizeof(ubo_vs), VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	glm::mat4 view_matrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f, 0.5f, zoom));
@@ -1426,6 +1447,9 @@ failed:
 
 	destroy_buffer(device, graphics_context->vertex_buffer);
 	free_memory(device, graphics_context->vertex_mem);
+
+	destroy_buffer(device, graphics_context->index_buffer);
+	free_memory(device, graphics_context->index_mem);
 
 	destroy_buffer(device, graphics_context->uniform_buffer_vs);
 	free_memory(device, graphics_context->uniform_memory_vs);
