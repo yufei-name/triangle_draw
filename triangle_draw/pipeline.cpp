@@ -72,15 +72,15 @@ VkResult setup_graphics_pipeline(struct GraphicsContext* graphics_context)
 
 	depth_stencil_state.depthTestEnable = VK_TRUE;
 	depth_stencil_state.depthWriteEnable = VK_TRUE;
-	depth_stencil_state.depthCompareOp = VK_COMPARE_OP_LESS;
+	depth_stencil_state.depthCompareOp = VK_COMPARE_OP_GREATER;
 	depth_stencil_state.front = depth_stencil_state.back;
-	depth_stencil_state.back.compareOp = VK_COMPARE_OP_ALWAYS;
+	depth_stencil_state.back.compareOp = VK_COMPARE_OP_GREATER;
 
 	viewport_state.viewportCount = 1;
 	viewport_state.scissorCount = 1;
 	viewport_state.flags = 0;
 
-	multisample_state.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+	multisample_state.rasterizationSamples = VK_SAMPLE_COUNT_8_BIT;
 	multisample_state.flags = 0;
 
 	dynamic_state.pDynamicStates = dynamic_state_enables;

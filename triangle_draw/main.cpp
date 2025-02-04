@@ -24,7 +24,7 @@ struct
 
 PFN_vkGetDeviceProcAddr pfn_vkGetDeviceProcAddr = NULL;
 
-int findSuitableInstanceExtensions(char** requestedExtensions, int* requestCount)
+int findSuitableInstanceExtensions(char*** requestedExtensions, int* requestCount)
 {
 	int i;
 	unsigned int platExtNum = 0;
@@ -61,7 +61,7 @@ int findSuitableInstanceExtensions(char** requestedExtensions, int* requestCount
 		return -1;
 
 	vkEnumerateInstanceExtensionProperties(nullptr, &instanceEextensionCount, availableInstanceExtensions);
-	*requestedExtensions = (char*)malloc(sizeof(requestedExtensionName[0]) * instanceEextensionCount);
+	*requestedExtensions = (char**)malloc(sizeof(requestedExtensionName[0]) * instanceEextensionCount);
 	if (!requestedExtensions)
 		return -1;
 
@@ -79,7 +79,7 @@ int findSuitableInstanceExtensions(char** requestedExtensions, int* requestCount
 
 		if (found)
 		{
-			requestedExtensions[*requestCount] = (char*)requestInstExt[i];
+			(*requestedExtensions)[*requestCount] = (char*)requestInstExt[i];
 			(*requestCount)++;
 		}
 	}
@@ -836,7 +836,7 @@ static void build_command_buffers(struct GraphicsContext* graphics_context)
 	command_buffer_begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
 	clear_values[0].color = default_clear_color;
-	clear_values[1].depthStencil = { 1.0f, 0 };
+	clear_values[1].depthStencil = { 0.0f, 0 };
 
 	render_pass_begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	render_pass_begin_info.renderPass = graphics_context->render_pass;
@@ -869,7 +869,7 @@ static void build_command_buffers(struct GraphicsContext* graphics_context)
 		vkCmdSetViewport(graphics_context->command_buffers[i], 0, 1, &viewport);
 		vkCmdSetScissor(graphics_context->command_buffers[i], 0, 1, &scissor);
 
-		//vkCmdBindDescriptorSets(graphics_context->command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_context->pipeline_layout, 0, 1, &graphics_context->descriptor_set, 0, NULL);
+		vkCmdBindDescriptorSets(graphics_context->command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_context->pipeline_layout, 0, 1, &graphics_context->descriptor_set, 0, NULL);
 		vkCmdBindPipeline(graphics_context->command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_context->graphics_pipeline);
 
 		vkCmdBindVertexBuffers(graphics_context->command_buffers[i], 0, 1, &graphics_context->vertex_buffer, offsets);
@@ -1131,10 +1131,10 @@ static int update(struct GraphicsContext* graphics_context)
 	return 0;
 }
 
-static int application_handler(struct GraphicsContext* graphics_context)
+static int application_handler(struct GraphicsContext* graphics_context, struct Window* win)
 {
 	event_param_t param = { 0 };
-	while (param.type != 1)
+	while (win->close != 1)
 	{
 		update(graphics_context);
 		platform_process_event(&param);
@@ -1159,12 +1159,12 @@ static int setup_uniform_buffer(struct GraphicsContext* graphics_context)
 	uint32_t width = graphics_context->surface_extent.width;
 	uint32_t height = graphics_context->surface_extent.height;
 	glm::vec3 camera_pos = glm::vec3();
-	glm::vec3 rotation = glm::vec3(0.0, 15.0, 0.0);
+	glm::vec3 rotation = glm::vec3(0.0, 0.0, 180.0);
 
 	graphics_context->uniform_buffer_vs = create_uniform_buffer(graphics_context->device, sizeof(ubo_vs));
 	graphics_context->uniform_memory_vs = alloc_bind_bufer_memory(graphics_context, graphics_context->uniform_buffer_vs,
 		sizeof(ubo_vs), VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-	glm::mat4 view_matrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, zoom));
+	glm::mat4 view_matrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f, 0.5f, zoom));
 
 	ubo_vs.model = view_matrix * glm::translate(glm::mat4(1.0f), camera_pos);
 	ubo_vs.model = glm::rotate(ubo_vs.model, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
@@ -1185,9 +1185,11 @@ int main()
 	VkInstanceCreateInfo createInstanceInfo = { VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
 	VkApplicationInfo appInfo{ VK_STRUCTURE_TYPE_APPLICATION_INFO };
 	VkInstance hInstance{ VK_NULL_HANDLE };
+	struct Window *window;
+
 	unsigned int physicalDeviceCount = 0;
 	VkPhysicalDevice* physicalDevices = NULL;
-	char* requestedExtensions = NULL;
+	char** requestedExtensions = NULL;
 	int extensionCount = 0;
 	VkSurfaceKHR display_surface;
 	VkPhysicalDevice curPhysDevice;
@@ -1249,7 +1251,7 @@ int main()
 	findSuitableInstanceExtensions(&requestedExtensions, &extensionCount);
 	createInstanceInfo.pApplicationInfo = &appInfo;
 	createInstanceInfo.enabledExtensionCount = extensionCount;
-	createInstanceInfo.ppEnabledExtensionNames = &requestedExtensions;
+	createInstanceInfo.ppEnabledExtensionNames = requestedExtensions;
 
 	VkResult result = vkCreateInstance(&createInstanceInfo, nullptr, &hInstance);
 
@@ -1260,8 +1262,10 @@ int main()
 
 	physicalDevices = (VkPhysicalDevice*)malloc(sizeof(VkPhysicalDevice) * physicalDeviceCount);
 	vkEnumeratePhysicalDevices(hInstance, &physicalDeviceCount, physicalDevices);
-	
-	platform_initialization(hInstance, &display_surface);
+	window = (struct Window*)malloc(sizeof(struct Window));
+	window->handle = nullptr;
+	window->close = 0;
+	platform_initialization(hInstance, &display_surface, window);
 	curPhysDevice = get_suitable_gpu(display_surface, physicalDevices, physicalDeviceCount);
 
 	depth_format = get_suitable_depth_format(curPhysDevice);
@@ -1399,7 +1403,7 @@ int main()
 	setup_descriptors(graphics_context);
 	build_command_buffers(graphics_context);
 
-	application_handler(graphics_context);
+	application_handler(graphics_context, window);
 failed:
 	if (requestedExtensions)
 		free(requestedExtensions);
@@ -1420,14 +1424,11 @@ failed:
 	if (graphics_context->swapchain_images)
 		free(graphics_context->swapchain_images);
 
-	if (display_surface)
-	{
-		vkDestroySurfaceKHR(hInstance, display_surface, NULL);
-		display_surface = NULL;
-	}
-
 	destroy_buffer(device, graphics_context->vertex_buffer);
 	free_memory(device, graphics_context->vertex_mem);
+
+	destroy_buffer(device, graphics_context->uniform_buffer_vs);
+	free_memory(device, graphics_context->uniform_memory_vs);
 
 	if (graphics_context->command_buffers)
 	{
@@ -1486,10 +1487,24 @@ failed:
 			vkDestroyFence(device, wait_fences[i], nullptr);
 		}
 	}
+
 	if (device)
 	{
 		vkDestroyDevice(device, NULL);
 		device = NULL;
+	}
+
+	if (display_surface)
+	{
+		vkDestroySurfaceKHR(hInstance, display_surface, NULL);
+		display_surface = NULL;
+	}
+
+	platform_deinitialization(window->handle);
+
+	if (window)
+	{
+		free(window);
 	}
 
 	if (hInstance)

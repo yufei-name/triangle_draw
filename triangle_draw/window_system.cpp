@@ -22,6 +22,8 @@ const char** get_platform_extension(unsigned int* platform_extension_num)
 }
 static LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+    struct Window* window = (struct Window*)GetPropW(hWnd, L"YUFEI");
+
     switch (uMsg) {
     case WM_CLOSE: {
         // Prompt user to confirm exit
@@ -33,7 +35,8 @@ static LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
         );
 
         if (result == IDYES) {
-            DestroyWindow(hWnd); // Destroy the window if user confirms
+            //DestroyWindow(hWnd); // Destroy the window if user confirms
+            window->close = 1;
         }
         return 0; // Do not pass WM_CLOSE to DefWindowProc
     }
@@ -44,7 +47,7 @@ static LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
         return DefWindowProcW(hWnd, uMsg, wParam, lParam);
     }
 }
-int createNativeWindow(HINSTANCE hInstance, HWND *pHwind)
+int createNativeWindow(HINSTANCE hInstance, HWND *pHwind, struct Window* win)
 {
     DWORD style = WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_SYSMENU | WS_MINIMIZEBOX | WS_CAPTION | WS_MAXIMIZEBOX | WS_THICKFRAME;
     DWORD exStyle = WS_EX_APPWINDOW;
@@ -110,7 +113,7 @@ int createNativeWindow(HINSTANCE hInstance, HWND *pHwind)
         return -1;
     }
 
-    SetPropW(hWindow, L"GLFW", NULL);
+    SetPropW(hWindow, L"YUFEI", win);
 
     ChangeWindowMessageFilterEx(hWindow,WM_DROPFILES, MSGFLT_ALLOW, NULL);
     ChangeWindowMessageFilterEx(hWindow,WM_COPYDATA, MSGFLT_ALLOW, NULL);
@@ -152,7 +155,7 @@ VkSurfaceKHR createWindowSurface(HINSTANCE hInstance, HWND hWindow, VkInstance v
     }
     return surface;
 }
-int platform_initialization(VkInstance vkInst, VkSurfaceKHR* vkSurface)
+int platform_initialization(VkInstance vkInst, VkSurfaceKHR* vkSurface, struct Window* win)
 {
     if (!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
         GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
@@ -162,14 +165,16 @@ int platform_initialization(VkInstance vkInst, VkSurfaceKHR* vkSurface)
         printf("Win32: Failed to retrieve own module handle");
         return -1;
     }
-    createNativeWindow(win32Instance, &hWin);
+    createNativeWindow(win32Instance, &hWin, win);
     *vkSurface = createWindowSurface(win32Instance, hWin, vkInst);
+    win->handle = (void*)hWin;
 
     return 0;
 }
-int platform_deinitialization()
+int platform_deinitialization(void* window_handle)
 {
-    DestroyWindow(hWin);
+    HWND winHandle = (HWND)window_handle;
+    DestroyWindow(winHandle);
     return 0;
 }
 

@@ -6,7 +6,13 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/mat4x4.hpp>
-extern int platform_initialization(VkInstance vkInst, VkSurfaceKHR* surface);
+struct Window {
+	void* handle;
+	int close;
+};
+
+extern int platform_initialization(VkInstance vkInst, VkSurfaceKHR* surface, struct Window* win);
+extern int platform_deinitialization(void* window_handle);
 const char** get_platform_extension(unsigned int* platform_extension_num);
 
 struct GraphicsContext
