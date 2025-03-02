@@ -38,7 +38,7 @@ VkResult setup_graphics_pipeline(struct GraphicsContext* graphics_context)
 		  .location = 0, // location
 	      .binding = 0, // binding
 	      .format = VK_FORMAT_R32G32_SFLOAT,//format
-	      .offset = offsetof(Vertex, color), // offset
+	      .offset = 0, // offset
 		},// position
 		{
 		 .location = 1, 

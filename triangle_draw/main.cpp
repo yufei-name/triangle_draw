@@ -16,7 +16,7 @@ struct Vertex  vertices[] = {
 		{{-1.0f, -1.0f}, {1.0f, 1.0f, 1.0f}},       // vertex 4: white
 };
 
-uint32_t indices[] = {0, 1, 2, 1, 0, 3};
+uint32_t indices[] = {0, 1, 2, 0, 2, 3};
 struct
 {
 	glm::mat4 projection;
@@ -28,7 +28,7 @@ PFN_vkGetDeviceProcAddr pfn_vkGetDeviceProcAddr = NULL;
 
 int findSuitableInstanceExtensions(char*** requestedExtensions, int* requestCount)
 {
-	int i;
+	unsigned int i;
 	unsigned int platExtNum = 0;
 	unsigned int instanceEextensionCount;
 	VkExtensionProperties* availableInstanceExtensions;
@@ -97,7 +97,7 @@ VkPhysicalDevice get_suitable_gpu(VkSurfaceKHR surface, VkPhysicalDevice* physDe
 	assert(surface && "Invalid surface handle!");
 
 	// Find a discrete GPU
-	for (int i = 0; i < phys_device_num; i++)
+	for (unsigned int i = 0; i < phys_device_num; i++)
 	{
 		VkPhysicalDeviceProperties properties;
 		vkGetPhysicalDeviceProperties(physDevice[i], &properties);
@@ -130,7 +130,7 @@ VkPhysicalDevice get_suitable_gpu(VkSurfaceKHR surface, VkPhysicalDevice* physDe
 }
 static int extension_supported(VkExtensionProperties* extensions, unsigned int ext_cnt, const char* ext_name)
 {
-	for (int i = 0; i < ext_cnt; i++)
+	for (unsigned int i = 0; i < ext_cnt; i++)
 	{
 		if (!strcmp(extensions[i].extensionName, ext_name))
 		{
@@ -178,7 +178,7 @@ static VkDevice create_device(VkPhysicalDevice physDevice)
 	if (queueCreateInfo == NULL || queueProperties == NULL)
 		return device;
 
-	for (int i = 0; i < queueFamilyCount; i++)
+	for (unsigned int i = 0; i < queueFamilyCount; i++)
 	{
 		VkQueueFamilyProperties queueFamilyProperty = queueFamilyProperties[i];
 		queueProperties[i] = (float*)malloc(queueFamilyProperty.queueCount * sizeof(float));
@@ -187,7 +187,7 @@ static VkDevice create_device(VkPhysicalDevice physDevice)
 			return device;
 		}
 
-		for (int j = 0; j < queueFamilyProperty.queueCount; j++)
+		for (unsigned int j = 0; j < queueFamilyProperty.queueCount; j++)
 		{
 			queueProperties[i][j] = 0.5;
 		}
@@ -223,7 +223,7 @@ static VkDevice create_device(VkPhysicalDevice physDevice)
 	{
 		int match = 0;
 
-		for (int j = 0; j < device_extension_count; j++)
+		for (unsigned int j = 0; j < device_extension_count; j++)
 		{
 			if (!strcmp(requestedDeviceExt[i], deviceExtensions[j].extensionName))
 			{
@@ -257,7 +257,7 @@ failed:
 	if (enabledExtensionName)
 		free(enabledExtensionName);
 
-	for (int i = 0; i < queueFamilyCount; i++)
+	for (unsigned int i = 0; i < queueFamilyCount; i++)
 	{
 		free(queueProperties[i]);
 	}
@@ -296,7 +296,7 @@ static int create_cmd_pool(VkDevice device, VkQueueFamilyProperties* queueFamily
 	VkQueue queue = VK_NULL_HANDLE;
 	VkCommandPoolCreateInfo createCmdPool;
 	int queueFamilyIndex = -1;
-	for (int i = 0; i < propertyCount; i++)
+	for (unsigned int i = 0; i < propertyCount; i++)
 	{
         vkGetDeviceQueue(device, i, 0, &queue);
 		if (queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT)
@@ -453,7 +453,7 @@ static int create_render_context(VkPhysicalDevice physDevice, VkDevice device, V
 
 	vkGetPhysicalDeviceSurfacePresentModesKHR(physDevice, surface, &availablePresentModeNum, availabelPresenModes);
 
-	for (int i = 0; i < availablePresentModeNum; i++)
+	for (unsigned int i = 0; i < availablePresentModeNum; i++)
 	{
 		if (present_mode == availabelPresenModes[i])
 		{
@@ -463,7 +463,7 @@ static int create_render_context(VkPhysicalDevice physDevice, VkDevice device, V
 	}
 	if (!matchPresentMode)
 	{
-		for (int i = 0; i < availablePresentModeNum; i++)
+		for (unsigned int i = 0; i < availablePresentModeNum; i++)
 		{
 			for (int j = 0; j < sizeof(present_mode_priority_list) / sizeof(present_mode_priority_list[0]); j++)
 			{
@@ -859,7 +859,7 @@ static void build_command_buffers(struct GraphicsContext* graphics_context)
 	scissor.offset.x = 0;
 	scissor.offset.y = 0;
 
-	for (int32_t i = 0; i < graphics_context->image_num; i++)
+	for (uint32_t i = 0; i < graphics_context->image_num; i++)
 	{
 		// Set target frame buffer
 		render_pass_begin_info.framebuffer = graphics_context->framebuffers[i];
@@ -1180,12 +1180,12 @@ static int setup_uniform_buffer(struct GraphicsContext* graphics_context)
 	uint32_t width = graphics_context->surface_extent.width;
 	uint32_t height = graphics_context->surface_extent.height;
 	glm::vec3 camera_pos = glm::vec3();
-	glm::vec3 rotation = glm::vec3(0.0, 0.0, 180.0);
+	glm::vec3 rotation = glm::vec3(0.0, 0.0, 0.0);
 
 	graphics_context->uniform_buffer_vs = create_buffer(graphics_context->device, sizeof(ubo_vs), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 	graphics_context->uniform_memory_vs = alloc_bind_bufer_memory(graphics_context, graphics_context->uniform_buffer_vs,
 		sizeof(ubo_vs), VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-	glm::mat4 view_matrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f, 0.5f, zoom));
+	glm::mat4 view_matrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, zoom));
 
 	ubo_vs.model = view_matrix * glm::translate(glm::mat4(1.0f), camera_pos);
 	ubo_vs.model = glm::rotate(ubo_vs.model, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
