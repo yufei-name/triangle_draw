@@ -58,7 +58,7 @@ VkResult setup_graphics_pipeline(struct GraphicsContext* graphics_context)
 	input_assembly_state.primitiveRestartEnable = VK_FALSE;
 
 	rasterization_state.polygonMode = VK_POLYGON_MODE_FILL;
-	rasterization_state.cullMode = VK_CULL_MODE_BACK_BIT;
+	rasterization_state.cullMode = VK_CULL_MODE_FRONT_BIT;
 	rasterization_state.frontFace = VK_FRONT_FACE_CLOCKWISE;
 	rasterization_state.flags = 0;
 	rasterization_state.depthClampEnable = VK_FALSE;

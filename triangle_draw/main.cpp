@@ -27,24 +27,25 @@ uint32_t indices[] = {
        0, 2, 3, // triangle 1
 
 	   // bottom plane of cube
-       1, 2, 5, // triangle 2
-       2, 6, 5, // triangle 3
+       2, 1, 5, // triangle 2
+       6, 2, 5, // triangle 3
 
 	   // left plane of cube
-       2, 3, 7, // triangle 4
-       2, 7, 6, // triangle 5
-
+       3, 2, 7, // triangle 4
+       7, 2, 6, // triangle 5
+	   
 	   // top plane of cube
        3, 7, 4, // triangle 6
        0, 3, 4, // triangle 7
 
 	   // right plane of cube
-       1, 0, 4, // triangle 8
-       1, 4, 5, // triangle 9
-
+       0, 4, 1, // triangle 8
+       4, 5, 1, // triangle 9
+	   
 	   // back plane of cube
-       4, 5, 6, // triangle 10
-       4, 6, 7, // triangle 11
+       5, 4, 6, // triangle 10
+       4, 7, 6, // triangle 11
+	   
 };
 
 struct
@@ -1210,7 +1211,7 @@ static int setup_uniform_buffer(struct GraphicsContext* graphics_context)
 	uint32_t width = graphics_context->surface_extent.width;
 	uint32_t height = graphics_context->surface_extent.height;
 	glm::vec3 camera_pos = glm::vec3();
-	glm::vec3 rotation = glm::vec3(0.0, 45.0, 0.0);
+	glm::vec3 rotation = glm::vec3(-45.0, -45.0, 0.0);
 
 	graphics_context->uniform_buffer_vs = create_buffer(graphics_context->device, sizeof(ubo_vs), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 	graphics_context->uniform_memory_vs = alloc_bind_bufer_memory(graphics_context, graphics_context->uniform_buffer_vs,
