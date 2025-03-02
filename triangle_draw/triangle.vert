@@ -32,7 +32,7 @@ vec3 triangle_colors[3] = vec3[](
     vec3(0.0, 0.0, 1.0)
 );
 
-layout(location = 0) in vec2 in_position;
+layout(location = 0) in vec3 in_position;
 layout(location = 1) in vec3 in_color;
 
 layout (binding = 0) uniform UBO 
@@ -46,7 +46,8 @@ void main()
 {
     //gl_Position = vec4(in_position, 0.5, 1.0);
 
-    gl_Position = ubo.projection * ubo.model * vec4(in_position, 0.5, 1.0);
+    //gl_Position = ubo.projection * ubo.model * vec4(in_position, 0.5, 1.0);
+    gl_Position = ubo.projection * ubo.model * vec4(in_position, 1.0);
 
     out_color = in_color;
 }

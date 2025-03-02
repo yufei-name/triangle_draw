@@ -37,8 +37,8 @@ VkResult setup_graphics_pipeline(struct GraphicsContext* graphics_context)
 		{
 		  .location = 0, // location
 	      .binding = 0, // binding
-	      .format = VK_FORMAT_R32G32_SFLOAT,//format
-	      .offset = 0, // offset
+	      .format = VK_FORMAT_R32G32B32_SFLOAT,//format
+	      .offset = offsetof(Vertex, position), // offset
 		},// position
 		{
 		 .location = 1, 
@@ -58,7 +58,7 @@ VkResult setup_graphics_pipeline(struct GraphicsContext* graphics_context)
 	input_assembly_state.primitiveRestartEnable = VK_FALSE;
 
 	rasterization_state.polygonMode = VK_POLYGON_MODE_FILL;
-	rasterization_state.cullMode = VK_CULL_MODE_NONE;
+	rasterization_state.cullMode = VK_CULL_MODE_BACK_BIT;
 	rasterization_state.frontFace = VK_FRONT_FACE_CLOCKWISE;
 	rasterization_state.flags = 0;
 	rasterization_state.depthClampEnable = VK_FALSE;

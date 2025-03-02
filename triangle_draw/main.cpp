@@ -10,13 +10,43 @@
 #include "descriptor.h"
 
 struct Vertex  vertices[] = {
-		{{1.0f, -1.0f}, {1.0f, 0.0f, 0.0f}},        // Vertex 1: Red
-		{{1.0f, 1.0f}, {0.0f, 1.0f, 0.0f}},         // Vertex 2: Green
-		{{-1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},         // Vertex 3: Blue
-		{{-1.0f, -1.0f}, {1.0f, 1.0f, 1.0f}},       // vertex 4: white
+		{{0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},        // Vertex 0: Red
+		{{0.5f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},         // Vertex 1: Green
+		{{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},         // Vertex 2: Blue
+		{{-0.5f, -0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}},        // vertex 3: white
+
+		{{0.5f, -0.5f, 1.0f}, {1.0f, 1.0f, 0.0f}},        // Vertex 4: Red + Green
+		{{0.5f, 0.5f, 1.0f}, {0.0f, 1.0f, 1.0f}},         // Vertex 5: Green + Blue
+		{{-0.5f, 0.5f, 1.0f}, {1.0f, 0.0f, 1.0f}},         // Vertex 6: Red + Blue
+		{{-0.5f, -0.5f, 1.0f}, {0.5f, 0.5f, 0.5f}},        // vertex 7: gray
 };
 
-uint32_t indices[] = {0, 1, 2, 0, 2, 3};
+uint32_t indices[] = {
+	   // front plane of cube
+       0, 1, 2, // triangle 0
+       0, 2, 3, // triangle 1
+
+	   // bottom plane of cube
+       1, 2, 5, // triangle 2
+       2, 6, 5, // triangle 3
+
+	   // left plane of cube
+       2, 3, 7, // triangle 4
+       2, 7, 6, // triangle 5
+
+	   // top plane of cube
+       3, 7, 4, // triangle 6
+       0, 3, 4, // triangle 7
+
+	   // right plane of cube
+       1, 0, 4, // triangle 8
+       1, 4, 5, // triangle 9
+
+	   // back plane of cube
+       4, 5, 6, // triangle 10
+       4, 6, 7, // triangle 11
+};
+
 struct
 {
 	glm::mat4 projection;
@@ -1180,7 +1210,7 @@ static int setup_uniform_buffer(struct GraphicsContext* graphics_context)
 	uint32_t width = graphics_context->surface_extent.width;
 	uint32_t height = graphics_context->surface_extent.height;
 	glm::vec3 camera_pos = glm::vec3();
-	glm::vec3 rotation = glm::vec3(0.0, 0.0, 0.0);
+	glm::vec3 rotation = glm::vec3(0.0, 45.0, 0.0);
 
 	graphics_context->uniform_buffer_vs = create_buffer(graphics_context->device, sizeof(ubo_vs), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 	graphics_context->uniform_memory_vs = alloc_bind_bufer_memory(graphics_context, graphics_context->uniform_buffer_vs,
